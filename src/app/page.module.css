@@ -10,6 +10,9 @@
 .header {
   margin-bottom: 2rem;
   flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .header h1 {

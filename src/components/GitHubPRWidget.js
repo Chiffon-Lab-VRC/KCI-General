@@ -12,6 +12,8 @@ const GitHubPRWidget = () => {
     const [loadingFiles, setLoadingFiles] = useState(false);
     const [relatedTickets, setRelatedTickets] = useState([]);
     const [loadingTickets, setLoadingTickets] = useState(false);
+    const [sortBy, setSortBy] = useState('time'); // 'time' or 'label'
+    const [filterLabel, setFilterLabel] = useState('all'); // 'all' or specific label
 
     useEffect(() => {
         fetchPRs();
@@ -80,11 +82,70 @@ const GitHubPRWidget = () => {
 
     if (loading) return <div className={styles.widget}>Loading PRs...</div>;
 
+    // フィルタリング処理
+    const filteredPRs = filterLabel === 'all'
+        ? prs
+        : prs.filter(pr => pr.labels && pr.labels.some(label => label.name === filterLabel));
+
+    // ソート処理
+    const sortedPRs = [...filteredPRs].sort((a, b) => {
+        if (sortBy === 'label') {
+            // ラベルがない場合は後ろに
+            const aLabel = a.labels && a.labels.length > 0 ? a.labels[0].name : 'zzz';
+            const bLabel = b.labels && b.labels.length > 0 ? b.labels[0].name : 'zzz';
+            return aLabel.localeCompare(bLabel);
+        }
+        // デフォルト: 時系列順（番号の降順 = 新しい順）
+        return b.number - a.number;
+    });
+
+    // ユニークなラベルリストを取得
+    const allLabels = prs.flatMap(pr => pr.labels || []);
+    const uniqueLabels = [...new Set(allLabels.map(label => label.name))].sort();
+
     return (
         <div className={styles.widget}>
-            <h3 className={styles.title}>GitHub Pull Requests</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>GitHub Pull Requests ({sortedPRs.length})</h3>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <select
+                        value={filterLabel}
+                        onChange={(e) => setFilterLabel(e.target.value)}
+                        style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            background: 'var(--secondary)',
+                            color: 'var(--foreground)',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="all">全て表示</option>
+                        {uniqueLabels.map(label => (
+                            <option key={label} value={label}>{label}</option>
+                        ))}
+                    </select>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            background: 'var(--secondary)',
+                            color: 'var(--foreground)',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="time">時系列順</option>
+                        <option value="label">ラベル順</option>
+                    </select>
+                </div>
+            </div>
             <div className={styles.scrollableList}>
-                {prs.map(pr => (
+                {sortedPRs.map(pr => (
                     <div key={pr.number} onClick={() => handlePRClick(pr)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
                         <div className={styles.compactItem}>
                             <div className={styles.compactHeader}>
