@@ -13,7 +13,7 @@ export default function Home() {
     <main className={styles.main}>
       <header className={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <img src="/kci-logo.png" alt="KCI Logo" style={{ height: '60px', width: 'auto' }} />
+          <img src="/kci-logo.png" alt="KCI Logo" style={{ height: '100px', width: 'auto' }} />
           <div>
             <h1>KCI Task Manager</h1>
             <p>Real-time status of the current project.</p>
