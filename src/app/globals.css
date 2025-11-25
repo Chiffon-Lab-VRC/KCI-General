@@ -1,0 +1,61 @@
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #FF6B35;
+  --secondary: #eaeaea;
+  --accent: #fafafa;
+  --border: #eaeaea;
+  --card-bg: #ffffff;
+  --card-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary: #FF6B35;
+    --secondary: #333333;
+    --accent: #111111;
+    --border: #333333;
+    --card-bg: #111111;
+    --card-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.5);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.content-wrapper {
+  margin-left: 0;
+  height: 100vh;
+  padding: 2rem;
+  background: var(--background);
+  transition: margin-left 0.3s ease;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    margin-left: 0;
+    padding-bottom: 80px;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+}

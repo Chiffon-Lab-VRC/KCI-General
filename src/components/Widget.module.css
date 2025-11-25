@@ -1,0 +1,489 @@
+.widget {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.item {
+    padding: 0.75rem;
+    background: var(--secondary);
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.itemLink {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.itemLink:hover .item {
+    transform: translateX(5px);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.status {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+}
+
+.status.new {
+    background: #6c757d;
+}
+
+.status.in-progress {
+    background: #FF6B35;
+}
+
+.status.urgent {
+    background: #dc3545;
+}
+
+.label {
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.subject,
+.message {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.author {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: right;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .header,
+    .author,
+    .compactAuthor {
+        color: #aaa;
+    }
+}
+
+/* Compact View Styles */
+.scrollableList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Custom Scrollbar */
+.scrollableList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollableList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollableList::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.compactItem {
+    padding: 0.5rem;
+    background: var(--secondary);
+    border-radius: 6px;
+    transition: transform 0.1s;
+    font-size: 0.9rem;
+}
+
+.itemLink:hover .compactItem {
+    transform: translateX(3px);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.compactHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.compactContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.compactSubject {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.compactAuthor {
+    font-size: 0.75rem;
+    color: #888;
+    white-space: nowrap;
+}
+
+/* Modal Styles */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 16px;
+    width: 95%;
+    max-width: 1400px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    animation: modalSlideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modalTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modalContentGrid {
+    display: flex;
+    gap: 2rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.modalMainColumn {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    color: #555;
+}
+
+.modalSideColumn {
+    width: 300px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+    padding-right: 0.5rem;
+}
+
+.sideTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.ticketList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ticketItem {
+    display: block;
+    padding: 0.75rem;
+    background: var(--secondary);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s;
+    border: 1px solid transparent;
+}
+
+.ticketItem:hover {
+    transform: translateX(3px);
+    border-color: var(--border);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.ticketId {
+    font-size: 0.75rem;
+    color: #888;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.ticketSubject {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.loadingText,
+.noDataText {
+    font-size: 0.9rem;
+    color: #888;
+    font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+    .sideTitle {
+        color: #aaa;
+    }
+
+    .modalMainColumn {
+        color: #ddd;
+    }
+}
+
+.modalBody {
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    color: #555;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.markdownContent {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.markdownContent p {
+    margin-bottom: 1rem;
+}
+
+.markdownContent ul,
+.markdownContent ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.markdownContent code {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.markdownContent pre {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.markdownContent pre code {
+    background: transparent;
+    padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .markdownContent code,
+    .markdownContent pre {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .modalBody {
+        color: #ddd;
+    }
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    align-items: center;
+}
+
+.button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.cancelButton {
+    background: transparent;
+    color: #666;
+    border: 1px solid var(--border);
+}
+
+.cancelButton:hover {
+    background: var(--secondary);
+}
+
+/* Diff View Styles */
+.filesSection {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+}
+
+.filesTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.fileItem {
+    background: var(--secondary);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.fileHeader {
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.fileStats {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.diffContent {
+    padding: 0.5rem;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.85rem;
+    white-space: pre;
+    overflow-x: auto;
+    background: var(--card-bg);
+    color: #333;
+    line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+    .fileHeader {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .diffContent {
+        background: #1e1e1e;
+        color: #ddd;
+    }
+
+    .cancelButton {
+        color: #ccc;
+        border-color: #444;
+    }
+
+    .cancelButton:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+.approveButton {
+    background: #FF6B35;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.approveButton:hover {
+    background: #FF5722;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.approveButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
