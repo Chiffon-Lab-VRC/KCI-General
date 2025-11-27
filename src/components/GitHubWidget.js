@@ -124,11 +124,97 @@ const GitHubWidget = () => {
                         </div>
 
                         <div className={styles.modalBody}>
-                            <p><strong>Author:</strong> {selectedCommit.commit.author.name}</p>
-                            <p><strong>Date:</strong> {new Date(selectedCommit.commit.author.date).toLocaleString()}</p>
-                            <p><strong>SHA:</strong> {selectedCommit.sha.substring(0, 7)}</p>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'start', gap: '1rem', marginBottom: '1rem' }}>
+                                    {selectedCommit.author?.avatar_url && (
+                                        <img
+                                            src={selectedCommit.author.avatar_url}
+                                            alt={selectedCommit.author.login}
+                                            style={{ width: '48px', height: '48px', borderRadius: '50%' }}
+                                        />
+                                    )}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ marginBottom: '0.5rem' }}>
+                                            <strong style={{ fontSize: '1.1rem' }}>{selectedCommit.commit.author.name}</strong>
+                                            {selectedCommit.author?.login && (
+                                                <span style={{ color: '#888', marginLeft: '0.5rem' }}>@{selectedCommit.author.login}</span>
+                                            )}
+                                        </div>
+                                        <div style={{ color: '#888', fontSize: '0.9rem' }}>
+                                            committed {new Date(selectedCommit.commit.author.date).toLocaleString('ja-JP', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
 
-                            {selectedCommit.commit.message.split('\n').length > 1 && (
+                                <div style={{
+                                    padding: '1rem',
+                                    background: 'var(--secondary)',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border)',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>Commit Message</div>
+                                    <pre style={{
+                                        whiteSpace: 'pre-wrap',
+                                        margin: 0,
+                                        fontFamily: 'inherit',
+                                        fontSize: '0.95rem'
+                                    }}>
+                                        {selectedCommit.commit.message}
+                                    </pre>
+                                </div>
+
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                    gap: '1rem',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <div style={{
+                                        padding: '0.75rem',
+                                        background: 'var(--secondary)',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)'
+                                    }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '0.25rem' }}>Commit SHA</div>
+                                        <div style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>{selectedCommit.sha}</div>
+                                    </div>
+                                    {commitDetails && commitDetails.stats && (
+                                        <>
+                                            <div style={{
+                                                padding: '0.75rem',
+                                                background: 'var(--secondary)',
+                                                borderRadius: '8px',
+                                                border: '1px solid var(--border)'
+                                            }}>
+                                                <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '0.25rem' }}>Changes</div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+                                                    <span style={{ color: '#2ea44f' }}>+{commitDetails.stats.additions}</span>
+                                                    {' / '}
+                                                    <span style={{ color: '#cb2431' }}>-{commitDetails.stats.deletions}</span>
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                padding: '0.75rem',
+                                                background: 'var(--secondary)',
+                                                borderRadius: '8px',
+                                                border: '1px solid var(--border)'
+                                            }}>
+                                                <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '0.25rem' }}>Files Changed</div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{commitDetails.files?.length || 0}</div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {selectedCommit.commit.message.split('\n').length > 1 && false && (
                                 <div style={{ marginTop: '1rem' }}>
                                     <strong>Full Message:</strong>
                                     <pre style={{ whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}>
