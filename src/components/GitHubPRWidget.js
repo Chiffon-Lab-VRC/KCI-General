@@ -4,7 +4,12 @@ import styles from './Widget.module.css';
 
 import ReactMarkdown from 'react-markdown';
 
-const GitHubPRWidget = ({ onTicketClick = null }) => {
+const GitHubPRWidget = ({
+    onTicketClick = null,
+    isMobile = false,
+    isExpanded = true,
+    onToggle = null
+}) => {
     const [prs, setPrs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPR, setSelectedPR] = useState(null);
@@ -12,8 +17,8 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
     const [loadingFiles, setLoadingFiles] = useState(false);
     const [relatedTickets, setRelatedTickets] = useState([]);
     const [loadingTickets, setLoadingTickets] = useState(false);
-    const [sortBy, setSortBy] = useState('time'); // 'time' or 'label'
     const [filterLabel, setFilterLabel] = useState('all'); // 'all' or specific label
+    const [filterState, setFilterState] = useState('open'); // 'open', 'closed', or 'all'
     const [activeTab, setActiveTab] = useState('files'); // 'files', 'conversation', 'commits'
     const [comments, setComments] = useState([]);
     const [loadingComments, setLoadingComments] = useState(false);
@@ -22,15 +27,27 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
     const [commits, setCommits] = useState([]);
     const [loadingCommits, setLoadingCommits] = useState(false);
     const [selectedCommit, setSelectedCommit] = useState(null);
+    const [relatedTicketsExpanded, setRelatedTicketsExpanded] = useState(false); // Collapsed by default on mobile
     const [commitDetails, setCommitDetails] = useState(null);
     const [loadingCommitDetails, setLoadingCommitDetails] = useState(false);
 
     useEffect(() => {
         fetchPRs();
-    }, []);
+
+        // Auto-refresh every 30 seconds
+        const intervalId = setInterval(() => {
+            // Only refresh if no modal is open
+            if (!selectedPR) {
+                fetchPRs();
+            }
+        }, 30000);
+
+        // Cleanup interval on unmount
+        return () => clearInterval(intervalId);
+    }, [selectedPR, filterState]); // Re-create interval when modal or filter state changes
 
     const fetchPRs = () => {
-        fetch('/api/github/pulls')
+        fetch(`/api/github/pulls?state=${filterState}`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
@@ -174,98 +191,147 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
 
     if (loading) return <div className={styles.widget}>Loading PRs...</div>;
 
-    // フィルタリング処理
+    // フィルタリング処理（ラベル）
     const filteredPRs = filterLabel === 'all'
         ? prs
         : prs.filter(pr => pr.labels && pr.labels.some(label => label.name === filterLabel));
 
-    // ソート処理
-    const sortedPRs = [...filteredPRs].sort((a, b) => {
-        if (sortBy === 'label') {
-            // ラベルがない場合は後ろに
-            const aLabel = a.labels && a.labels.length > 0 ? a.labels[0].name : 'zzz';
-            const bLabel = b.labels && b.labels.length > 0 ? b.labels[0].name : 'zzz';
-            return aLabel.localeCompare(bLabel);
-        }
-        // デフォルト: 時系列順（番号の降順 = 新しい順）
-        return b.number - a.number;
-    });
+    // 時系列順でソート（新しい順）
+    const sortedPRs = [...filteredPRs].sort((a, b) => (b.number || 0) - (a.number || 0));
 
     // ユニークなラベルリストを取得
     const allLabels = prs.flatMap(pr => pr.labels || []);
     const uniqueLabels = [...new Set(allLabels.map(label => label.name))].sort();
 
     return (
-        <div className={styles.widget}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>GitHub Pull Requests ({sortedPRs.length})</h3>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <select
-                        value={filterLabel}
-                        onChange={(e) => setFilterLabel(e.target.value)}
-                        style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--secondary)',
-                            color: 'var(--foreground)',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <option value="all">全て表示</option>
-                        {uniqueLabels.map(label => (
-                            <option key={label} value={label}>{label}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--secondary)',
-                            color: 'var(--foreground)',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <option value="time">時系列順</option>
-                        <option value="label">ラベル順</option>
-                    </select>
-                </div>
+        <div className={styles.widget} style={{ height: isMobile && !isExpanded ? 'auto' : undefined }}>
+            <div
+                className="pr-widget-header"
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: isExpanded ? '1rem' : '0',
+                    paddingBottom: isExpanded ? '0.5rem' : '1rem',
+                    borderBottom: '1px solid var(--border)',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem',
+                    cursor: isMobile ? 'pointer' : 'default'
+                }}
+                onClick={() => isMobile && onToggle && onToggle()}
+            >
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
+                    {isMobile && <span style={{ marginRight: '0.5rem' }}>{isExpanded ? '▼' : '▶'}</span>}
+                    GitHub Pull Requests ({sortedPRs.length})
+                </h3>
+                {isExpanded && (
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '0.25rem', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <button
+                                onClick={() => setFilterState('open')}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    border: 'none',
+                                    background: filterState === 'open' ? '#FF6B35' : 'var(--secondary)',
+                                    color: filterState === 'open' ? '#fff' : 'var(--foreground)',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    fontWeight: filterState === 'open' ? '600' : '400'
+                                }}
+                            >
+                                Open
+                            </button>
+                            <button
+                                onClick={() => setFilterState('closed')}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    border: 'none',
+                                    background: filterState === 'closed' ? '#FF6B35' : 'var(--secondary)',
+                                    color: filterState === 'closed' ? '#fff' : 'var(--foreground)',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    fontWeight: filterState === 'closed' ? '600' : '400'
+                                }}
+                            >
+                                Closed
+                            </button>
+                            <button
+                                onClick={() => setFilterState('all')}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    border: 'none',
+                                    background: filterState === 'all' ? '#FF6B35' : 'var(--secondary)',
+                                    color: filterState === 'all' ? '#fff' : 'var(--foreground)',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    fontWeight: filterState === 'all' ? '600' : '400'
+                                }}
+                            >
+                                All
+                            </button>
+                        </div>
+                        <select
+                            value={filterLabel}
+                            onChange={(e) => setFilterLabel(e.target.value)}
+                            style={{
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--secondary)',
+                                color: 'var(--foreground)',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="all">全て表示</option>
+                            {uniqueLabels.map(label => (
+                                <option key={label} value={label}>{label}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
-            <div className={styles.scrollableList}>
-                {sortedPRs.map(pr => (
-                    <div key={pr.number} onClick={() => handlePRClick(pr)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
-                        <div className={styles.compactItem}>
-                            <div className={styles.compactHeader}>
-                                <span className={styles.id}>#{pr.number}</span>
-                                <span className={styles.status} style={{ background: '#2ea44f' }}>Open</span>
-                                {pr.labels && pr.labels.length > 0 && (
-                                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                                        {pr.labels.map((label, idx) => (
-                                            <span
-                                                key={idx}
-                                                className={styles.label}
-                                                style={{ background: `#${label.color}` }}
-                                            >
-                                                {label.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            <div className={styles.compactContent}>
-                                <p className={styles.compactSubject}>{pr.title}</p>
-                                <span className={styles.compactAuthor}>by {pr.user.login}</span>
+            {isExpanded && (
+                <div className={styles.scrollableList}>
+                    {sortedPRs.map(pr => (
+                        <div key={pr.number} onClick={() => handlePRClick(pr)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
+                            <div className={styles.compactItem}>
+                                <div className={styles.compactHeader}>
+                                    <span className={styles.id}>#{pr.number}</span>
+                                    <span
+                                        className={styles.status}
+                                        style={{
+                                            background: pr.state === 'open' ? '#2ea44f' : '#8250df'
+                                        }}
+                                    >
+                                        {pr.state === 'open' ? 'Open' :
+                                            pr.merged ? 'Merged' :
+                                                'Closed'}
+                                    </span>
+                                    {pr.labels && pr.labels.length > 0 && (
+                                        <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                            {pr.labels.map((label, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className={styles.label}
+                                                    style={{ background: `#${label.color}` }}
+                                                >
+                                                    {label.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className={styles.compactContent}>
+                                    <p className={styles.compactSubject}>{pr.title}</p>
+                                    <span className={styles.compactAuthor}>by {pr.user.login}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-                {prs.length === 0 && <p style={{ padding: '1rem', color: '#888' }}>No open PRs</p>}
-            </div>
+                    ))}
+                    {prs.length === 0 && <p style={{ padding: '1rem', color: '#888' }}>No open PRs</p>}
+                </div>
+            )}
 
             {selectedPR && (
                 <div className={styles.modalOverlay} onClick={() => setSelectedPR(null)}>
@@ -356,53 +422,93 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
                             </button>
                         </div>
 
-                        <div className={styles.modalContentGrid}>
-                            <div className={styles.modalMainColumn}>
-                                {/* PR Description */}
-                                <div className={styles.markdownContent}>
-                                    <ReactMarkdown>{selectedPR.body || "No description provided."}</ReactMarkdown>
-                                </div>
+                        {/* PR Description */}
+                        <div className={styles.markdownContent} style={{ marginBottom: '1.5rem' }}>
+                            <ReactMarkdown>{selectedPR.body || "No description provided."}</ReactMarkdown>
+                        </div>
 
-                                {/* Tab Content */}
+                        <div className={styles.modalBody}>
+                            <div className={styles.modalContentGrid}>
                                 {activeTab === 'files' && (
-                                    <div className={styles.filesSection}>
-                                        <h4 className={styles.filesTitle}>Files Changed</h4>
-                                        {loadingFiles ? (
-                                            <p>Loading files...</p>
-                                        ) : (
-                                            files.map((file, index) => (
-                                                <div key={index} className={styles.fileItem}>
-                                                    <div className={styles.fileHeader}>
-                                                        <span>{file.filename}</span>
-                                                        <span className={styles.fileStats}>
-                                                            <span style={{ color: '#2ea44f' }}>+{file.additions}</span> / <span style={{ color: '#cb2431' }}>-{file.deletions}</span>
-                                                        </span>
-                                                    </div>
-                                                    {file.patch && (
-                                                        <div className={styles.diffContent}>
-                                                            {file.patch.split('\n').map((line, idx) => {
-                                                                let bgColor = 'transparent';
-                                                                if (line.startsWith('+') && !line.startsWith('+++')) {
-                                                                    bgColor = 'rgba(46, 164, 79, 0.15)';
-                                                                } else if (line.startsWith('-') && !line.startsWith('---')) {
-                                                                    bgColor = 'rgba(203, 36, 49, 0.15)';
-                                                                }
-                                                                return (
-                                                                    <div key={idx} style={{ backgroundColor: bgColor }}>
-                                                                        {line}
-                                                                    </div>
-                                                                );
-                                                            })}
+                                    <>
+                                        <div className={styles.modalMainColumn}>
+                                            <h4 className={styles.filesTitle}>Files Changed</h4>
+                                            {loadingFiles ? (
+                                                <p>Loading files...</p>
+                                            ) : files.length > 0 ? (
+                                                files.map((file, index) => (
+                                                    <div key={index} className={styles.fileItem}>
+                                                        <div className={styles.fileHeader}>
+                                                            <span className={styles.fileName}>{file.filename}</span>
+                                                            <span className={styles.fileStats}>
+                                                                <span style={{ color: '#2ea44f' }}>+{file.additions}</span> / <span style={{ color: '#cb2431' }}>-{file.deletions}</span>
+                                                            </span>
                                                         </div>
-                                                    )}
+                                                        {file.patch && (
+                                                            <div className={styles.diffContent}>
+                                                                {file.patch.split('\n').map((line, idx) => {
+                                                                    let bgColor = 'transparent';
+                                                                    if (line.startsWith('+') && !line.startsWith('+++')) {
+                                                                        bgColor = 'rgba(46, 164, 79, 0.15)';
+                                                                    } else if (line.startsWith('-') && !line.startsWith('---')) {
+                                                                        bgColor = 'rgba(203, 36, 49, 0.15)';
+                                                                    }
+                                                                    return (
+                                                                        <div key={idx} style={{ backgroundColor: bgColor }}>
+                                                                            {line}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p style={{ color: '#888' }}>No files changed.</p>
+                                            )}
+                                        </div>
+
+                                        {/* Desktop sidebar - shown on desktop only */}
+                                        {!isMobile && (
+                                            <div className={styles.modalSideColumn}>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem',
+                                                        marginBottom: '0.75rem'
+                                                    }}
+                                                >
+                                                    <h4 className={styles.sideTitle}>
+                                                        Related Tickets{relatedTickets.length > 0 && ` (${relatedTickets.length})`}
+                                                    </h4>
                                                 </div>
-                                            ))
+                                                {loadingTickets ? (
+                                                    <p className={styles.loadingText}>Loading...</p>
+                                                ) : relatedTickets.length > 0 ? (
+                                                    <div className={styles.ticketList}>
+                                                        {relatedTickets.map(ticket => (
+                                                            <div
+                                                                key={ticket.id}
+                                                                className={styles.ticketItem}
+                                                                style={{ cursor: 'pointer' }}
+                                                                onClick={() => onTicketClick && onTicketClick(ticket)}
+                                                            >
+                                                                <span className={styles.ticketId}>#{ticket.id}</span>
+                                                                <p className={styles.ticketSubject}>{ticket.subject}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className={styles.noDataText}>No related tickets found.</p>
+                                                )}
+                                            </div>
                                         )}
-                                    </div>
+                                    </>
                                 )}
 
                                 {activeTab === 'conversation' && (
-                                    <div style={{ marginTop: '1rem' }}>
+                                    <div className={styles.modalMainColumn}>
                                         <h4 style={{ marginBottom: '1rem' }}>Full Conversation ({timeline.length})</h4>
                                         {loadingTimeline ? (
                                             <p>Loading conversation...</p>
@@ -722,28 +828,75 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
                                 )}
                             </div>
 
-                            <div className={styles.modalSideColumn}>
-                                <h4 className={styles.sideTitle}>Related Tickets</h4>
-                                {loadingTickets ? (
-                                    <p className={styles.loadingText}>Searching...</p>
-                                ) : relatedTickets.length > 0 ? (
-                                    <div className={styles.ticketList}>
-                                        {relatedTickets.map(ticket => (
-                                            <div
-                                                key={ticket.id}
-                                                className={styles.ticketItem}
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => onTicketClick && onTicketClick(ticket)}
-                                            >
-                                                <span className={styles.ticketId}>#{ticket.id}</span>
-                                                <p className={styles.ticketSubject}>{ticket.subject}</p>
-                                            </div>
-                                        ))}
+                            {/* Mobile/Tablet Related Tickets - sticky at bottom */}
+                            {activeTab === 'files' && isMobile && (
+                                <div style={{
+                                    position: 'sticky',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    background: 'var(--card-bg)',
+                                    borderTop: '2px solid var(--border)',
+                                    padding: '1rem',
+                                    zIndex: 10,
+                                    boxShadow: '0 -4px 6px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    <div
+                                        onClick={() => setRelatedTicketsExpanded(!relatedTicketsExpanded)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer',
+                                            marginBottom: relatedTicketsExpanded ? '0.75rem' : '0',
+                                            padding: '0.5rem 0'
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '0.9rem' }}>
+                                            {relatedTicketsExpanded ? '▼' : '▶'}
+                                        </span>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>
+                                            Related Tickets{relatedTickets.length > 0 && ` (${relatedTickets.length})`}
+                                        </h4>
                                     </div>
-                                ) : (
-                                    <p className={styles.noDataText}>No related tickets found.</p>
-                                )}
-                            </div>
+                                    {relatedTicketsExpanded && (
+                                        <div style={{
+                                            maxHeight: '200px',
+                                            overflowY: 'auto',
+                                            background: 'var(--background)'
+                                        }}>
+                                            {loadingTickets ? (
+                                                <p style={{ color: '#888', fontSize: '0.9rem' }}>Loading...</p>
+                                            ) : relatedTickets.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                    {relatedTickets.map(ticket => (
+                                                        <div
+                                                            key={ticket.id}
+                                                            onClick={() => onTicketClick && onTicketClick(ticket)}
+                                                            style={{
+                                                                padding: '0.75rem',
+                                                                background: 'var(--secondary)',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid var(--border)',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.25rem' }}>
+                                                                #{ticket.id}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>
+                                                                {ticket.subject}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p style={{ color: '#888', fontSize: '0.9rem' }}>No related tickets found.</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

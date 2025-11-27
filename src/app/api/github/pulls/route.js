@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request) {
+    const { searchParams } = new URL(request.url);
+    const state = searchParams.get('state') || 'open'; // 'open', 'closed', or 'all'
+
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const GITHUB_OWNER = process.env.GITHUB_OWNER;
     const GITHUB_REPO = process.env.GITHUB_REPO;
@@ -14,21 +17,23 @@ export async function GET() {
                 user: { login: "dev-user" },
                 html_url: "#",
                 state: "open",
-                body: "This is a mock PR description."
+                body: "This is a mock PR description.",
+                labels: []
             },
             {
                 number: 2,
                 title: "Mock: Fix/api-error",
                 user: { login: "test-user" },
                 html_url: "#",
-                state: "open",
-                body: "Fixes the API error on login."
+                state: "closed",
+                body: "Fixes the API error on login.",
+                labels: []
             }
         ]);
     }
 
     try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/pulls?state=open`, {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/pulls?state=${state}&per_page=100`, {
             headers: {
                 'Authorization': `Bearer ${GITHUB_TOKEN}`,
                 'Accept': 'application/vnd.github.v3+json'

@@ -2,7 +2,13 @@
 import { useEffect, useState } from 'react';
 import styles from './Widget.module.css';
 
-const RedmineWidget = ({ externalSelectedTicket = null, onExternalTicketClose = null }) => {
+const RedmineWidget = ({
+    externalSelectedTicket = null,
+    onExternalTicketClose = null,
+    isMobile = false,
+    isExpanded = true,
+    onToggle = null
+}) => {
     const [issues, setIssues] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState(null);
@@ -120,7 +126,18 @@ const RedmineWidget = ({ externalSelectedTicket = null, onExternalTicketClose = 
     useEffect(() => {
         fetchIssues();
         fetchStatuses();
-    }, []);
+
+        // Auto-refresh every 30 seconds
+        const intervalId = setInterval(() => {
+            // Only refresh if no modal is open
+            if (!selectedTicket) {
+                fetchIssues();
+            }
+        }, 30000);
+
+        // Cleanup interval on unmount
+        return () => clearInterval(intervalId);
+    }, [selectedTicket]); // Re-create interval when modal state changes
 
     // Handle external ticket selection (from GitHubPRWidget)
     useEffect(() => {
@@ -172,66 +189,84 @@ const RedmineWidget = ({ externalSelectedTicket = null, onExternalTicketClose = 
     const uniqueStatuses = [...new Set(issues.filter(i => i && i.status).map(issue => issue.status.name))].sort((a, b) => a.localeCompare(b, 'ja'));
 
     return (
-        <div className={styles.widget}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Redmine Tickets ({sortedIssues.length})</h3>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--secondary)',
-                            color: 'var(--foreground)',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <option value="all">全て表示</option>
-                        {uniqueStatuses.map(status => (
-                            <option key={status} value={status}>{status}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--secondary)',
-                            color: 'var(--foreground)',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <option value="time">時系列順</option>
-                        <option value="status">ステータス順</option>
-                    </select>
-                </div>
+        <div className={styles.widget} style={{ height: isMobile && !isExpanded ? 'auto' : undefined }}>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: isExpanded ? '1rem' : '0',
+                    paddingBottom: isExpanded ? '0.5rem' : '1rem',
+                    borderBottom: '1px solid var(--border)',
+                    cursor: isMobile ? 'pointer' : 'default'
+                }}
+                onClick={() => isMobile && onToggle && onToggle()}
+            >
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
+                    {isMobile && <span style={{ marginRight: '0.5rem' }}>{isExpanded ? '▼' : '▶'}</span>}
+                    Redmine Tickets ({sortedIssues.length})
+                </h3>
+                {isExpanded && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            style={{
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--secondary)',
+                                color: 'var(--foreground)',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="all">全て表示</option>
+                            {uniqueStatuses.map(status => (
+                                <option key={status} value={status}>{status}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            style={{
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--secondary)',
+                                color: 'var(--foreground)',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="time">時系列順</option>
+                            <option value="status">ステータス順</option>
+                        </select>
+                    </div>
+                )}
             </div>
-            <div className={styles.scrollableList}>
-                {sortedIssues.map(issue => (
-                    <div key={issue.id} onClick={() => handleTicketClick(issue)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
-                        <div className={styles.compactItem}>
-                            <div className={styles.compactHeader}>
-                                <span className={styles.id}>#{issue.id}</span>
-                                <span className={`${styles.status} ${styles[getStatusClass(issue.status.name)] || ''}`}>
-                                    {issue.status.name}
-                                </span>
-                            </div>
-                            <div className={styles.compactContent}>
-                                <p className={styles.compactSubject} title={issue.subject}>{issue.subject}</p>
-                                {issue.assigned_to && (
-                                    <span className={styles.compactAuthor}>{issue.assigned_to.name}</span>
-                                )}
+            {isExpanded && (
+                <div className={styles.scrollableList}>
+                    {sortedIssues.map(issue => (
+                        <div key={issue.id} onClick={() => handleTicketClick(issue)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
+                            <div className={styles.compactItem}>
+                                <div className={styles.compactHeader}>
+                                    <span className={styles.id}>#{issue.id}</span>
+                                    <span className={`${styles.status} ${styles[getStatusClass(issue.status.name)] || ''}`}>
+                                        {issue.status.name}
+                                    </span>
+                                </div>
+                                <div className={styles.compactContent}>
+                                    <p className={styles.compactSubject} title={issue.subject}>{issue.subject}</p>
+                                    {issue.assigned_to && (
+                                        <span className={styles.compactAuthor}>{issue.assigned_to.name}</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             {selectedTicket && (
                 <div

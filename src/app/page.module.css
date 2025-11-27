@@ -31,25 +31,49 @@
 
 .dashboardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
   flex: 1;
   min-height: 0;
+  max-height: calc(100vh - 200px);
+  /* Reserve space for header */
+  overflow: auto;
 }
 
-@media (max-width: 768px) {
+/* Tablet - 2 columns */
+@media (max-width: 1199px) {
+  .dashboardGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Mobile - 1 column */
+@media (max-width: 767px) {
   .main {
     height: auto;
+    min-height: 100vh;
     display: block;
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.75rem;
+  }
+
+  .header p {
+    font-size: 0.95rem;
   }
 
   .dashboardGrid {
-    display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    gap: 1.5rem;
-    flex: none;
+    gap: 1rem;
+    min-height: auto;
   }
 }
 

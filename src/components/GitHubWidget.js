@@ -2,7 +2,11 @@
 import { useEffect, useState } from 'react';
 import styles from './Widget.module.css';
 
-const GitHubWidget = () => {
+const GitHubWidget = ({
+    isMobile = false,
+    isExpanded = true,
+    onToggle = null
+}) => {
     const [commits, setCommits] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCommit, setSelectedCommit] = useState(null);
@@ -44,49 +48,67 @@ const GitHubWidget = () => {
     if (loading) return <div className={styles.widget}>Loading GitHub...</div>;
 
     return (
-        <div className={styles.widget}>
-            <h3 className={styles.title}>GitHub Activity ({commits.length})</h3>
-            <div className={styles.scrollableList}>
-                {commits.map(item => (
-                    <div key={item.sha} onClick={() => handleCommitClick(item)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
-                        <div className={styles.compactItem}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                                {item.author?.avatar_url && (
-                                    <img
-                                        src={item.author.avatar_url}
-                                        alt={item.author.login}
-                                        style={{ width: '20px', height: '20px', borderRadius: '50%' }}
-                                    />
-                                )}
-                                <span style={{ fontWeight: 'bold' }}>{item.commit.author.name}</span>
-                                {item.branch && (
-                                    <span style={{
-                                        fontSize: '0.75rem',
-                                        padding: '2px 6px',
-                                        borderRadius: '10px',
-                                        background: 'rgba(255, 107, 53, 0.2)',
-                                        color: '#FF6B35'
-                                    }}>
-                                        {item.branch}
-                                    </span>
-                                )}
-                            </div>
-                            <div style={{ marginTop: '0.25rem' }}>
-                                <span style={{ color: 'var(--primary)', fontWeight: '500' }}>{item.commit.message.split('\n')[0]}</span>
-                            </div>
-                            <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#888', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <span style={{ fontFamily: 'monospace' }}>{item.sha.substring(0, 7)}</span>
-                                <span>{new Date(item.commit.author.date).toLocaleString('ja-JP', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}</span>
+        <div className={styles.widget} style={{ height: isMobile && !isExpanded ? 'auto' : undefined }}>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: isExpanded ? '1rem' : '0',
+                    paddingBottom: isExpanded ? '0.5rem' : '1rem',
+                    borderBottom: '1px solid var(--border)',
+                    cursor: isMobile ? 'pointer' : 'default'
+                }}
+                onClick={() => isMobile && onToggle && onToggle()}
+            >
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
+                    {isMobile && <span style={{ marginRight: '0.5rem' }}>{isExpanded ? '▼' : '▶'}</span>}
+                    GitHub Activity ({commits.length})
+                </h3>
+            </div>
+            {isExpanded && (
+                <div className={styles.scrollableList}>
+                    {commits.map(item => (
+                        <div key={item.sha} onClick={() => handleCommitClick(item)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
+                            <div className={styles.compactItem}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                    {item.author?.avatar_url && (
+                                        <img
+                                            src={item.author.avatar_url}
+                                            alt={item.author.login}
+                                            style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+                                        />
+                                    )}
+                                    <span style={{ fontWeight: 'bold' }}>{item.commit.author.name}</span>
+                                    {item.branch && (
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            padding: '2px 6px',
+                                            borderRadius: '10px',
+                                            background: 'rgba(255, 107, 53, 0.2)',
+                                            color: '#FF6B35'
+                                        }}>
+                                            {item.branch}
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{ marginTop: '0.25rem' }}>
+                                    <span style={{ color: 'var(--primary)', fontWeight: '500' }}>{item.commit.message.split('\n')[0]}</span>
+                                </div>
+                                <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#888', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <span style={{ fontFamily: 'monospace' }}>{item.sha.substring(0, 7)}</span>
+                                    <span>{new Date(item.commit.author.date).toLocaleString('ja-JP', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             {selectedCommit && (
                 <div className={styles.modalOverlay} onClick={() => setSelectedCommit(null)}>
