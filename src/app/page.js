@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import RedmineWidget from "@/components/RedmineWidget";
 import GitHubWidget from "@/components/GitHubWidget";
 import GitHubPRWidget from "@/components/GitHubPRWidget";
+import Header from '@/components/Header';
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -53,16 +54,10 @@ export default function Home() {
   };
 
   return (
-    <main className={styles.main}>
-      <header className={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <img src="/kci-logo.png" alt="KCI Logo" style={{ height: '100px', width: 'auto' }} />
-          <div>
-            <h1>KCI Task Manager</h1>
-            <p>Real-time status of the current project.</p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+    <>
+      <Header onRefresh={handleRefresh} />
+      <div className={styles.page}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '2rem', justifyContent: 'center' }}>
           {isMobile && (
             <>
               <button
@@ -105,48 +100,29 @@ export default function Home() {
               </button>
             </>
           )}
-          <button
-            onClick={handleRefresh}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#FF6B35',
-              color: 'white',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 4px rgba(255, 107, 53, 0.2)'
-            }}
-            onMouseOver={(e) => e.target.style.background = '#FF5722'}
-            onMouseOut={(e) => e.target.style.background = '#FF6B35'}
-          >
-            最新の情報に更新
-          </button>
         </div>
-      </header>
 
-      <div className={styles.dashboardGrid}>
-        <RedmineWidget
-          externalSelectedTicket={selectedRedmineTicket}
-          onExternalTicketClose={() => setSelectedRedmineTicket(null)}
-          isMobile={isMobile}
-          isExpanded={!isMobile || expandedWidgets.includes('redmine')}
-          onToggle={() => toggleWidget('redmine')}
-        />
-        <GitHubPRWidget
-          onTicketClick={handleTicketClick}
-          isMobile={isMobile}
-          isExpanded={!isMobile || expandedWidgets.includes('github-pr')}
-          onToggle={() => toggleWidget('github-pr')}
-        />
-        <GitHubWidget
-          isMobile={isMobile}
-          isExpanded={!isMobile || expandedWidgets.includes('github-activity')}
-          onToggle={() => toggleWidget('github-activity')}
-        />
+        <div className={styles.dashboardGrid}>
+          <RedmineWidget
+            externalSelectedTicket={selectedRedmineTicket}
+            onExternalTicketClose={() => setSelectedRedmineTicket(null)}
+            isMobile={isMobile}
+            isExpanded={!isMobile || expandedWidgets.includes('redmine')}
+            onToggle={() => toggleWidget('redmine')}
+          />
+          <GitHubPRWidget
+            onTicketClick={handleTicketClick}
+            isMobile={isMobile}
+            isExpanded={!isMobile || expandedWidgets.includes('github-pr')}
+            onToggle={() => toggleWidget('github-pr')}
+          />
+          <GitHubWidget
+            isMobile={isMobile}
+            isExpanded={!isMobile || expandedWidgets.includes('github-activity')}
+            onToggle={() => toggleWidget('github-activity')}
+          />
+        </div>
       </div>
-    </main>
+    </>
   );
 }

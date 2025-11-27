@@ -33,11 +33,10 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
-  flex: 1;
-  min-height: 0;
-  max-height: calc(100vh - 200px);
-  /* Reserve space for header */
-  overflow: auto;
+  height: calc(100vh - 180px);
+  /* Fixed height based on viewport minus header */
+  overflow: hidden;
+  /* No scroll on grid itself */
 }
 
 /* Tablet and Mobile - 1 column for accordion */

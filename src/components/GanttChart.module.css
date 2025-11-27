@@ -1,0 +1,291 @@
+.ganttContainer {
+    display: flex;
+    height: 100%;
+    min-height: 600px;
+    max-height: calc(100vh - 250px);
+    overflow: hidden;
+}
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 600px;
+    color: #888;
+    font-size: 1.1rem;
+}
+
+/* 左側：チケットツリー */
+.ticketTree {
+    border-right: 2px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 0;
+}
+
+/* カスタムスクロールバー  */
+.ticketTree::-webkit-scrollbar {
+    width: 10px;
+}
+
+.ticketTree::-webkit-scrollbar-track {
+    background: var(--secondary);
+}
+
+.ticketTree::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+}
+
+.ticketTree::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+.treeHeader,
+.treeRow {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.treeHeader {
+    position: sticky;
+    top: 0;
+    background: var(--secondary);
+    font-weight: 700;
+    z-index: 10;
+    height: 60px;
+}
+
+.treeRow {
+    height: 60px;
+    transition: background 0.2s;
+}
+
+.treeRow:hover {
+    background: var(--secondary);
+}
+
+.headerCell,
+.treeCell {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.headerCell {
+    color: var(--foreground);
+}
+
+.treeCell {
+    color: var(--foreground);
+}
+
+/* 右側：タイムライン */
+.timelineContainer {
+    flex: 1;
+    overflow: auto;
+    min-width: 0;
+}
+
+/* タイムラインのカスタムスクロールバー */
+.timelineContainer::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.timelineContainer::-webkit-scrollbar-track {
+    background: var(--secondary);
+}
+
+.timelineContainer::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+}
+
+.timelineContainer::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+.timelineHeader,
+.timelineRow {
+    display: flex;
+    position: relative;
+}
+
+.timelineHeader {
+    position: sticky;
+    top: 0;
+    background: var(--secondary);
+    z-index: 10;
+    border-bottom: 2px solid var(--border);
+    height: 60px;
+}
+
+/* 月次ビュー用の日ヘッダー */
+.dayHeader {
+    min-width: 50px;
+    width: 50px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0.25rem;
+}
+
+.dayNumber {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.monthLabel {
+    position: absolute;
+    top: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* マスタービュー用の月ヘッダー */
+.monthHeader {
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.monthYearLabel {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 0.25rem;
+}
+
+.monthNameLabel {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.timelineRow {
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+/* バー */
+.bar {
+    position: absolute;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.bar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.plannedBar {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    /* Slate gray for planned */
+    top: 10px;
+    z-index: 1;
+}
+
+.actualBar {
+    background: linear-gradient(135deg, #FF6B35 0%, #d65020 100%);
+    /* Primary Orange for actual */
+    top: 36px;
+    z-index: 2;
+}
+
+.barLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* グリッド線 - 動的生成 */
+.gridBackground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.gridLine {
+    height: 100%;
+    border-right: 1px solid #444;
+    box-sizing: border-box;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+    .ticketTree {
+        /* width: 500px;  <- JSで制御するため削除 */
+        /* min-width: 500px; <- JSで制御するため削除 */
+    }
+
+    .headerCell,
+    .treeCell {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .ganttContainer {
+        max-height: none;
+    }
+
+    .ticketTree {
+        /* width: 400px; <- JSで制御するため削除 */
+        /* min-width: 400px; <- JSで制御するため削除 */
+    }
+
+    .headerCell,
+    .treeCell {
+        padding: 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .dayHeader,
+    .monthHeader {
+        min-width: 30px;
+    }
+
+    .bar {
+        height: 20px;
+    }
+
+    .plannedBar {
+        top: 8px;
+    }
+
+    .actualBar {
+        top: 32px;
+    }
+}
