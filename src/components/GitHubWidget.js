@@ -45,21 +45,43 @@ const GitHubWidget = () => {
 
     return (
         <div className={styles.widget}>
-            <h3 className={styles.title}>GitHub Activity</h3>
+            <h3 className={styles.title}>GitHub Activity ({commits.length})</h3>
             <div className={styles.scrollableList}>
                 {commits.map(item => (
                     <div key={item.sha} onClick={() => handleCommitClick(item)} className={styles.itemLink} style={{ cursor: 'pointer' }}>
                         <div className={styles.compactItem}>
-                            <div className={styles.compactHeader}>
-                                <span style={{ fontWeight: 'bold', marginRight: '0.5rem' }}>{item.commit.author.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                {item.author?.avatar_url && (
+                                    <img
+                                        src={item.author.avatar_url}
+                                        alt={item.author.login}
+                                        style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+                                    />
+                                )}
+                                <span style={{ fontWeight: 'bold' }}>{item.commit.author.name}</span>
+                                {item.branch && (
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        padding: '2px 6px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(255, 107, 53, 0.2)',
+                                        color: '#FF6B35'
+                                    }}>
+                                        {item.branch}
+                                    </span>
+                                )}
                             </div>
                             <div style={{ marginTop: '0.25rem' }}>
                                 <span style={{ color: 'var(--primary)', fontWeight: '500' }}>{item.commit.message.split('\n')[0]}</span>
                             </div>
-                            <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#888' }}>
-                                <span>{item.sha.substring(0, 7)}</span>
-                                <span style={{ margin: '0 0.5rem' }}>-</span>
-                                <span>{item.commit.author.name}</span>
+                            <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#888', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontFamily: 'monospace' }}>{item.sha.substring(0, 7)}</span>
+                                <span>{new Date(item.commit.author.date).toLocaleString('ja-JP', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}</span>
                             </div>
                         </div>
                     </div>
@@ -70,7 +92,22 @@ const GitHubWidget = () => {
                 <div className={styles.modalOverlay} onClick={() => setSelectedCommit(null)}>
                     <div className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h2 className={styles.modalTitle}>{selectedCommit.commit.message.split('\n')[0]}</h2>
+                            <div>
+                                <h2 className={styles.modalTitle}>{selectedCommit.commit.message.split('\n')[0]}</h2>
+                                {selectedCommit.branch && (
+                                    <div style={{ marginTop: '0.5rem' }}>
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            padding: '4px 10px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(255, 107, 53, 0.2)',
+                                            color: '#FF6B35'
+                                        }}>
+                                            Branch: {selectedCommit.branch}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                             <div className={styles.modalActions}>
                                 <button className={`${styles.button} ${styles.cancelButton}`} onClick={() => setSelectedCommit(null)}>
                                     Close

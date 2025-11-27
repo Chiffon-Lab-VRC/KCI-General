@@ -1,12 +1,19 @@
 "use client";
+import { useState } from "react";
 import RedmineWidget from "@/components/RedmineWidget";
 import GitHubWidget from "@/components/GitHubWidget";
 import GitHubPRWidget from "@/components/GitHubPRWidget";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const [selectedRedmineTicket, setSelectedRedmineTicket] = useState(null);
+
   const handleRefresh = () => {
     window.location.reload();
+  };
+
+  const handleTicketClick = (ticket) => {
+    setSelectedRedmineTicket(ticket);
   };
 
   return (
@@ -41,8 +48,11 @@ export default function Home() {
       </header>
 
       <div className={styles.dashboardGrid}>
-        <RedmineWidget />
-        <GitHubPRWidget />
+        <RedmineWidget
+          externalSelectedTicket={selectedRedmineTicket}
+          onExternalTicketClose={() => setSelectedRedmineTicket(null)}
+        />
+        <GitHubPRWidget onTicketClick={handleTicketClick} />
         <GitHubWidget />
       </div>
     </main>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import styles from './Widget.module.css';
 
-const RedmineWidget = () => {
+const RedmineWidget = ({ externalSelectedTicket = null, onExternalTicketClose = null }) => {
     const [issues, setIssues] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState(null);
@@ -122,6 +122,13 @@ const RedmineWidget = () => {
         fetchStatuses();
     }, []);
 
+    // Handle external ticket selection (from GitHubPRWidget)
+    useEffect(() => {
+        if (externalSelectedTicket) {
+            handleTicketClick(externalSelectedTicket);
+        }
+    }, [externalSelectedTicket]);
+
     const getStatusClass = (statusName) => {
         if (!statusName) return '';
         const lower = statusName.toLowerCase();
@@ -227,12 +234,22 @@ const RedmineWidget = () => {
             </div>
 
             {selectedTicket && (
-                <div className={styles.modalOverlay} onClick={() => setSelectedTicket(null)}>
+                <div
+                    className={styles.modalOverlay}
+                    style={externalSelectedTicket ? { zIndex: 1100 } : {}}
+                    onClick={() => {
+                        setSelectedTicket(null);
+                        if (onExternalTicketClose) onExternalTicketClose();
+                    }}
+                >
                     <div className={styles.modal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h2 className={styles.modalTitle}>#{selectedTicket.id}: {selectedTicket.subject}</h2>
                             <div className={styles.modalActions}>
-                                <button className={`${styles.button} ${styles.cancelButton}`} onClick={() => setSelectedTicket(null)}>
+                                <button className={`${styles.button} ${styles.cancelButton}`} onClick={() => {
+                                    setSelectedTicket(null);
+                                    if (onExternalTicketClose) onExternalTicketClose();
+                                }}>
                                     Close
                                 </button>
                                 <a

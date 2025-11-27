@@ -36,15 +36,17 @@ export async function GET() {
 
         const branches = await branchesRes.json();
 
-        // Fetch commits from all branches (limit to first 5 branches to avoid too many API calls)
-        const branchesToFetch = branches.slice(0, 5);
-        const commitPromises = branchesToFetch.map(branch =>
-            fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits?sha=${branch.name}&per_page=10`, {
+        // Fetch commits from all branches (limit to first 10 branches to get more commits)
+        const branchesToFetch = branches.slice(0, 10);
+        const commitPromises = branchesToFetch.map(async branch =>
+            fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits?sha=${branch.name}&per_page=20`, {
                 headers: {
                     'Authorization': `Bearer ${GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json'
                 }
-            }).then(res => res.json())
+            })
+                .then(res => res.json())
+                .then(commits => commits.map(commit => ({ ...commit, branch: branch.name })))
         );
 
         const allCommitsArrays = await Promise.all(commitPromises);
@@ -54,7 +56,7 @@ export async function GET() {
         const uniqueCommits = Array.from(
             new Map(allCommits.map(commit => [commit.sha, commit])).values()
         ).sort((a, b) => new Date(b.commit.author.date) - new Date(a.commit.author.date))
-            .slice(0, 20);
+            .slice(0, 50); // Increased to 50
 
         return NextResponse.json(uniqueCommits);
     } catch (error) {
