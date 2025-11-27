@@ -88,13 +88,27 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
                 setLoadingComments(false);
             });
 
-        // Fetch Timeline (full conversation)
-        fetch(`/api/github/pulls/${pr.number}/timeline`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.timeline) {
-                    setTimeline(data.timeline);
-                }
+        // Fetch Timeline (full conversation) and merge with comments
+        Promise.all([
+            fetch(`/api/github/pulls/${pr.number}/timeline`).then(res => res.json()),
+            fetch(`/api/github/pulls/${pr.number}/comments`).then(res => res.json())
+        ])
+            .then(([timelineData, commentsData]) => {
+                const timelineEvents = timelineData.timeline || [];
+                const reviewComments = (commentsData.comments || []).map(comment => ({
+                    ...comment,
+                    event: 'review_comment',
+                    created_at: comment.created_at
+                }));
+
+                // Merge and sort all events by date
+                const allEvents = [...timelineEvents, ...reviewComments].sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.submitted_at || 0);
+                    const dateB = new Date(b.created_at || b.submitted_at || 0);
+                    return dateA - dateB;
+                });
+
+                setTimeline(allEvents);
                 setLoadingTimeline(false);
             })
             .catch(err => {
@@ -389,54 +403,200 @@ const GitHubPRWidget = ({ onTicketClick = null }) => {
 
                                 {activeTab === 'conversation' && (
                                     <div style={{ marginTop: '1rem' }}>
-                                        <h4 style={{ marginBottom: '1rem' }}>Full Conversation</h4>
+                                        <h4 style={{ marginBottom: '1rem' }}>Full Conversation ({timeline.length})</h4>
                                         {loadingTimeline ? (
                                             <p>Loading conversation...</p>
                                         ) : timeline.length > 0 ? (
-                                            timeline.map((event, index) => (
-                                                <div key={index} style={{
-                                                    background: 'var(--secondary)',
-                                                    padding: '1rem',
-                                                    borderRadius: '8px',
-                                                    marginBottom: '1rem',
-                                                    border: '1px solid var(--border)'
-                                                }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                                        {event.user?.avatar_url && (
-                                                            <img
-                                                                src={event.user.avatar_url}
-                                                                alt={event.user.login}
-                                                                style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                                                            />
-                                                        )}
-                                                        <strong>{event.user?.login || 'Unknown'}</strong>
-                                                        {event.event === 'reviewed' && event.state && (
-                                                            <span style={{
-                                                                fontSize: '0.8rem',
-                                                                padding: '2px 8px',
-                                                                borderRadius: '12px',
-                                                                background: event.state === 'approved' ? 'rgba(46, 164, 79, 0.2)' :
-                                                                    event.state === 'changes_requested' ? 'rgba(203, 36, 49, 0.2)' :
-                                                                        'rgba(155, 155, 155, 0.2)',
-                                                                color: event.state === 'approved' ? '#2ea44f' :
-                                                                    event.state === 'changes_requested' ? '#cb2431' : '#666'
+                                            <div style={{ position: 'relative' }}>
+                                                {timeline.map((event, index) => {
+                                                    // Helper function to get event icon
+                                                    const getEventIcon = (eventType) => {
+                                                        const iconMap = {
+                                                            'commented': '💬',
+                                                            'reviewed': '👁️',
+                                                            'review_comment': '📝',
+                                                            'review_requested': '🔍',
+                                                            'labeled': '🏷️',
+                                                            'unlabeled': '🏷️',
+                                                            'assigned': '👤',
+                                                            'unassigned': '👤',
+                                                            'milestoned': '🎯',
+                                                            'demilestoned': '🎯',
+                                                            'renamed': '✏️',
+                                                            'locked': '🔒',
+                                                            'unlocked': '🔓',
+                                                            'head_ref_deleted': '🗑️',
+                                                            'head_ref_restored': '♻️',
+                                                            'convert_to_draft': '📝',
+                                                            'ready_for_review': '✅',
+                                                            'closed': '❌',
+                                                            'reopened': '🔄',
+                                                            'merged': '🔀',
+                                                            'committed': '📝'
+                                                        };
+                                                        return iconMap[eventType] || '📌';
+                                                    };
+
+                                                    // Helper function to get event description
+                                                    const getEventDescription = (event) => {
+                                                        switch (event.event) {
+                                                            case 'commented':
+                                                                return 'commented';
+                                                            case 'review_comment':
+                                                                return event.path ? `commented on ${event.path}` : 'left a review comment';
+                                                            case 'reviewed':
+                                                                if (event.state === 'approved') return 'approved';
+                                                                if (event.state === 'changes_requested') return 'requested changes';
+                                                                return 'reviewed';
+                                                            case 'review_requested':
+                                                                return `requested review from ${event.review_requester?.login || 'someone'}`;
+                                                            case 'labeled':
+                                                                return `added the ${event.label?.name || 'label'}`;
+                                                            case 'unlabeled':
+                                                                return `removed the ${event.label?.name || 'label'}`;
+                                                            case 'assigned':
+                                                                return `assigned ${event.assignee?.login || 'someone'}`;
+                                                            case 'unassigned':
+                                                                return `unassigned ${event.assignee?.login || 'someone'}`;
+                                                            case 'milestoned':
+                                                                return `added to milestone ${event.milestone?.title || ''}`;
+                                                            case 'demilestoned':
+                                                                return `removed from milestone`;
+                                                            case 'renamed':
+                                                                return `renamed from "${event.rename?.from}" to "${event.rename?.to}"`;
+                                                            case 'head_ref_deleted':
+                                                                return 'deleted the head branch';
+                                                            case 'head_ref_restored':
+                                                                return 'restored the head branch';
+                                                            case 'convert_to_draft':
+                                                                return 'converted to draft';
+                                                            case 'ready_for_review':
+                                                                return 'marked as ready for review';
+                                                            case 'closed':
+                                                                return 'closed this';
+                                                            case 'reopened':
+                                                                return 'reopened this';
+                                                            case 'merged':
+                                                                return 'merged this';
+                                                            case 'committed':
+                                                                return `added ${event.sha?.substring(0, 7) || 'commit'}`;
+                                                            default:
+                                                                return event.event || 'activity';
+                                                        }
+                                                    };
+
+                                                    return (
+                                                        <div key={event.id || index} style={{
+                                                            display: 'flex',
+                                                            gap: '1rem',
+                                                            marginBottom: '1.5rem',
+                                                            position: 'relative'
+                                                        }}>
+                                                            {/* Timeline line */}
+                                                            {index < timeline.length - 1 && (
+                                                                <div style={{
+                                                                    position: 'absolute',
+                                                                    left: '15px',
+                                                                    top: '32px',
+                                                                    bottom: '-24px',
+                                                                    width: '2px',
+                                                                    background: 'var(--border)'
+                                                                }}></div>
+                                                            )}
+
+                                                            {/* Event icon */}
+                                                            <div style={{
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                borderRadius: '50%',
+                                                                background: 'var(--secondary)',
+                                                                border: '2px solid var(--border)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                fontSize: '1rem',
+                                                                flexShrink: 0,
+                                                                position: 'relative',
+                                                                zIndex: 1
                                                             }}>
-                                                                {event.state === 'approved' ? '✓ Approved' :
-                                                                    event.state === 'changes_requested' ? '✗ Changes Requested' :
-                                                                        '💬 Commented'}
-                                                            </span>
-                                                        )}
-                                                        <span style={{ color: '#888', fontSize: '0.85rem', marginLeft: 'auto' }}>
-                                                            {new Date(event.created_at || event.submitted_at).toLocaleString('ja-JP')}
-                                                        </span>
-                                                    </div>
-                                                    {event.body && (
-                                                        <div style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>
-                                                            <ReactMarkdown>{event.body}</ReactMarkdown>
+                                                                {getEventIcon(event.event)}
+                                                            </div>
+
+                                                            {/* Event content */}
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+                                                                    {event.user?.avatar_url && (
+                                                                        <img
+                                                                            src={event.user.avatar_url}
+                                                                            alt={event.user.login}
+                                                                            style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+                                                                        />
+                                                                    )}
+                                                                    {event.actor?.avatar_url && !event.user && (
+                                                                        <img
+                                                                            src={event.actor.avatar_url}
+                                                                            alt={event.actor.login}
+                                                                            style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+                                                                        />
+                                                                    )}
+                                                                    <strong>{event.user?.login || event.actor?.login || 'Unknown'}</strong>
+                                                                    <span style={{ color: '#888' }}>{getEventDescription(event)}</span>
+                                                                    {event.label && (
+                                                                        <span style={{
+                                                                            fontSize: '0.75rem',
+                                                                            padding: '2px 8px',
+                                                                            borderRadius: '12px',
+                                                                            background: event.label.color ? `#${event.label.color}20` : '#ddd',
+                                                                            color: event.label.color ? `#${event.label.color}` : '#666',
+                                                                            border: `1px solid ${event.label.color ? `#${event.label.color}` : '#999'}`
+                                                                        }}>
+                                                                            {event.label.name}
+                                                                        </span>
+                                                                    )}
+                                                                    <span style={{ color: '#888', fontSize: '0.8rem', marginLeft: 'auto' }}>
+                                                                        {new Date(event.created_at || event.submitted_at).toLocaleString('ja-JP', {
+                                                                            month: 'short',
+                                                                            day: 'numeric',
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </span>
+                                                                </div>
+                                                                {event.body && (
+                                                                    <div style={{
+                                                                        marginTop: '0.5rem',
+                                                                        padding: '0.75rem',
+                                                                        background: 'var(--secondary)',
+                                                                        borderRadius: '8px',
+                                                                        border: '1px solid var(--border)'
+                                                                    }}>
+                                                                        <ReactMarkdown>{event.body}</ReactMarkdown>
+                                                                    </div>
+                                                                )}
+                                                                {event.state && event.event === 'reviewed' && (
+                                                                    <div style={{
+                                                                        marginTop: '0.5rem',
+                                                                        fontSize: '0.85rem',
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: '12px',
+                                                                        display: 'inline-block',
+                                                                        background: event.state === 'approved' ? 'rgba(46, 164, 79, 0.2)' :
+                                                                            event.state === 'changes_requested' ? 'rgba(203, 36, 49, 0.2)' :
+                                                                                'rgba(155, 155, 155, 0.2)',
+                                                                        color: event.state === 'approved' ? '#2ea44f' :
+                                                                            event.state === 'changes_requested' ? '#cb2431' : '#666',
+                                                                        fontWeight: '500'
+                                                                    }}>
+                                                                        {event.state === 'approved' ? '✓ Approved' :
+                                                                            event.state === 'changes_requested' ? '✗ Changes Requested' :
+                                                                                event.state === 'commented' ? '💬 Commented' : event.state}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ))
+                                                    );
+                                                })}
+                                            </div>
                                         ) : (
                                             <p style={{ color: '#888' }}>No conversation yet.</p>
                                         )}

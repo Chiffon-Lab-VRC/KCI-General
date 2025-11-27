@@ -47,13 +47,14 @@ export async function GET(request, { params }) {
 
         const timeline = await timelineRes.json();
 
-        // Filter to relevant events: commented, reviewed, committed, etc.
-        const relevantEvents = timeline.filter(event =>
-            ['commented', 'reviewed', 'commit-commented', 'line-commented'].includes(event.event) ||
-            event.body // Has a body (comment)
-        );
+        // Return all timeline events sorted by creation date
+        const sortedTimeline = timeline.sort((a, b) => {
+            const dateA = new Date(a.created_at || a.submitted_at || 0);
+            const dateB = new Date(b.created_at || b.submitted_at || 0);
+            return dateA - dateB;
+        });
 
-        return NextResponse.json({ timeline: relevantEvents });
+        return NextResponse.json({ timeline: sortedTimeline });
     } catch (error) {
         return NextResponse.json({ error: error.message, timeline: [] }, { status: 500 });
     }
