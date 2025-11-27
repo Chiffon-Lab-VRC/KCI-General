@@ -189,7 +189,7 @@ const RedmineWidget = ({
     const uniqueStatuses = [...new Set(issues.filter(i => i && i.status).map(issue => issue.status.name))].sort((a, b) => a.localeCompare(b, 'ja'));
 
     return (
-        <div className={styles.widget} style={{ height: isMobile && !isExpanded ? 'auto' : undefined }}>
+        <div className={styles.widget}>
             <div
                 style={{
                     display: 'flex',

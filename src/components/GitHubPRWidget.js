@@ -204,7 +204,7 @@ const GitHubPRWidget = ({
     const uniqueLabels = [...new Set(allLabels.map(label => label.name))].sort();
 
     return (
-        <div className={styles.widget} style={{ height: isMobile && !isExpanded ? 'auto' : undefined }}>
+        <div className={styles.widget}>
             <div
                 className="pr-widget-header"
                 style={{

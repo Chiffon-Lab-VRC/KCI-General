@@ -40,10 +40,10 @@
   overflow: auto;
 }
 
-/* Tablet - 2 columns */
+/* Tablet and Mobile - 1 column for accordion */
 @media (max-width: 1199px) {
   .dashboardGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1.5rem;
   }
 }
@@ -73,7 +73,9 @@
   .dashboardGrid {
     grid-template-columns: 1fr;
     gap: 1rem;
+    height: auto;
     min-height: auto;
+    max-height: none;
   }
 }
 

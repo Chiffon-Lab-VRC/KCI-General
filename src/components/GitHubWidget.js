@@ -48,7 +48,7 @@ const GitHubWidget = ({
     if (loading) return <div className={styles.widget}>Loading GitHub...</div>;
 
     return (
-        <div className={styles.widget} style={{ height: isMobile && !isExpanded ? 'auto' : undefined }}>
+        <div className={styles.widget}>
             <div
                 style={{
                     display: 'flex',
