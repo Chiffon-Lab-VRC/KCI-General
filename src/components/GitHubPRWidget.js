@@ -220,7 +220,11 @@ const GitHubPRWidget = ({
                 }}
                 onClick={() => isMobile && onToggle && onToggle()}
             >
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
+                <h3 style={{
+                    margin: 0,
+                    fontSize: (filterState === 'closed' || filterState === 'all') ? '1.1rem' : '1.25rem',
+                    fontWeight: 600
+                }}>
                     {isMobile && <span style={{ marginRight: '0.5rem' }}>{isExpanded ? '▼' : '▶'}</span>}
                     GitHub Pull Requests ({sortedPRs.length})
                 </h3>
