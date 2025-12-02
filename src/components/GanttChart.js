@@ -218,7 +218,7 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
 
     const renderTicketTree = (ticket, level = 0) => {
         const hasChildren = ticket.children && ticket.children.length > 0;
-        const isExpanded = expandedTickets[ticket.id] !== false;
+        const isExpanded = expandedTickets[ticket.id] === true;
 
         return (
             <>
@@ -288,7 +288,7 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
 
     const renderTicketBars = (ticket) => {
         const hasChildren = ticket.children && ticket.children.length > 0;
-        const isExpanded = expandedTickets[ticket.id] !== false;
+        const isExpanded = expandedTickets[ticket.id] === true;
 
         return (
             <>
