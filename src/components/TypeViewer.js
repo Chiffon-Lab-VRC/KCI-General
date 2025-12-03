@@ -182,75 +182,104 @@ export default function TypeViewer() {
     const parseTypesFromBlock = (blockContent, categoryName, priority) => {
         const types = [];
         const lines = blockContent.split('\n');
+
+        // First pass: identify all type definitions and their line numbers
+        const typeDefinitions = [];
         let currentType = null;
-        let typeContent = '';
+        let typeStartLine = -1;
         let typeBraceCount = 0;
         let inType = false;
-        let pendingComment = '';
 
-        for (let line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             const trimmed = line.trim();
 
-            // Collect JSDoc comments
+            // Skip comment lines in first pass
             if (trimmed.startsWith('/**') || trimmed.startsWith('*') || trimmed === '*/') {
-                if (pendingComment) pendingComment += '\n';
-                pendingComment += line;
                 continue;
             }
 
             // Match single-line definition: TypeName: ...;
             const singleLineMatch = line.match(/^\s*["']?(\w+)["']?\s*:\s*(.+);$/);
             if (singleLineMatch && !inType) {
-                const typeName = singleLineMatch[1];
-
-                // Include comment if present
-                const fullContent = pendingComment ? pendingComment + '\n' + line : line;
-
-                types.push({
-                    name: typeName,
-                    content: fullContent,
-                    category: categoryName,
-                    priority: priority
+                typeDefinitions.push({
+                    name: singleLineMatch[1],
+                    startLine: i,
+                    endLine: i,
+                    isSingleLine: true
                 });
-
-                pendingComment = '';
                 continue;
             }
 
             // Match block-style definition: TypeName: {
             const typeStartMatch = line.match(/^\s*["']?(\w+)["']?\s*:\s*\{/);
-
             if (typeStartMatch && !inType) {
                 currentType = typeStartMatch[1];
+                typeStartLine = i;
                 inType = true;
-                typeContent = pendingComment ? pendingComment + '\n' + line : line;
                 typeBraceCount = 1;
-                pendingComment = '';
                 continue;
             }
 
             if (inType) {
-                typeContent += '\n' + line;
                 typeBraceCount += (line.match(/\{/g) || []).length;
                 typeBraceCount -= (line.match(/\}/g) || []).length;
 
                 if (typeBraceCount === 0) {
-                    types.push({
+                    typeDefinitions.push({
                         name: currentType,
-                        content: typeContent,
-                        category: categoryName,
-                        priority: priority
+                        startLine: typeStartLine,
+                        endLine: i,
+                        isSingleLine: false
                     });
                     currentType = null;
-                    typeContent = '';
                     inType = false;
                 }
-            } else {
-                // Reset pending comment if we hit a non-comment, non-type line
-                if (trimmed && !trimmed.startsWith('//')) {
-                    pendingComment = '';
+            }
+        }
+
+        // Second pass: extract content with correct JSDoc comments
+        for (const typeDef of typeDefinitions) {
+            let commentStartLine = -1;
+
+            // Look backwards from type start to find JSDoc comment
+            for (let i = typeDef.startLine - 1; i >= 0; i--) {
+                const trimmed = lines[i].trim();
+
+                if (trimmed === '*/') {
+                    // Found end of JSDoc comment, continue looking for start
+                    continue;
+                } else if (trimmed.startsWith('/**')) {
+                    // Found start of JSDoc comment
+                    commentStartLine = i;
+                    break;
+                } else if (trimmed.startsWith('*')) {
+                    // Inside JSDoc comment, continue
+                    continue;
+                } else if (trimmed === '' || trimmed.startsWith('//')) {
+                    // Empty line or single-line comment, continue
+                    continue;
+                } else {
+                    // Hit non-comment content, stop looking
+                    break;
                 }
             }
+
+            // Extract content
+            let content = '';
+            const contentStartLine = commentStartLine >= 0 ? commentStartLine : typeDef.startLine;
+
+            for (let i = contentStartLine; i <= typeDef.endLine; i++) {
+                if (content) content += '\n';
+                content += lines[i];
+            }
+
+            types.push({
+                name: typeDef.name,
+                content: content,
+                category: categoryName,
+                priority: priority
+            });
         }
 
         return types;
