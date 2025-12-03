@@ -11,7 +11,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-import Sidebar from "@/components/Sidebar";
+
 
 export const metadata = {
   title: "KCI Project Dashboard",
@@ -22,7 +22,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Sidebar />
         <div className="content-wrapper">
           {children}
         </div>

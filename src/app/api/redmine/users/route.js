@@ -26,6 +26,15 @@ export async function GET() {
         }
 
         const data = await res.json();
+
+        // Add name property if missing (combine firstname and lastname)
+        if (data.users) {
+            data.users = data.users.map(user => ({
+                ...user,
+                name: user.name || `${user.lastname} ${user.firstname}`.trim()
+            }));
+        }
+
         return NextResponse.json(data);
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

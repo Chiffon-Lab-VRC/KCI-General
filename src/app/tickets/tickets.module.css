@@ -1,0 +1,327 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: var(--background);
+}
+
+.content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* サイドバー（チケットリスト） */
+.listPanel {
+    width: 350px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background);
+    flex-shrink: 0;
+}
+
+.listHeader {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.searchBox {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background-color: var(--secondary);
+    color: var(--foreground);
+}
+
+.createButton {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: opacity 0.2s;
+}
+
+.createButton:hover {
+    opacity: 0.9;
+}
+
+.ticketList {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.ticketItem {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ticketItem:hover {
+    background-color: var(--secondary);
+}
+
+.ticketItem.active {
+    background-color: rgba(255, 107, 53, 0.1);
+    /* Primary color with opacity */
+    border-left: 4px solid var(--primary);
+}
+
+.ticketSubject {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--foreground);
+}
+
+.ticketMeta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.statusBadge {
+    padding: 2px 6px;
+    border-radius: 10px;
+    background-color: #eee;
+    color: #333;
+    font-size: 0.7rem;
+}
+
+/* メインエリア（詳細・編集） */
+.detailPanel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background-color: var(--background);
+}
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+    font-size: 1.2rem;
+}
+
+.detailHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+}
+
+.detailTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--foreground);
+    margin-bottom: 0.5rem;
+}
+
+.detailMeta {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.editButton {
+    padding: 0.5rem 1rem;
+    background-color: var(--secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--foreground);
+}
+
+.detailGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #888;
+}
+
+.value {
+    font-size: 1rem;
+    color: var(--foreground);
+}
+
+.description {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    color: var(--foreground);
+    background-color: var(--secondary);
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+/* フォームスタイル */
+.formInput,
+.formSelect,
+.formTextarea {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background-color: var(--background);
+    color: var(--foreground);
+    width: 100%;
+}
+
+.formTextarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.cancelButton {
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--foreground);
+}
+
+.saveButton {
+    padding: 0.5rem 1rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* モーダル */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: var(--background);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #888;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+    .content {
+        flex-direction: column;
+    }
+
+    .listPanel {
+        width: 100%;
+        height: 40%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .detailPanel {
+        height: 60%;
+        padding: 1rem;
+    }
+
+    .detailGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Status Colors */
+.status_popup {
+    background-color: #28a745;
+    color: white;
+}
+
+/* 新規タスク */
+.status_doing {
+    background-color: #FF6B35;
+    color: white;
+}
+
+/* 今やってます */
+.status_pending {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* 保留中 */
+.status_review {
+    background-color: #a003b8;
+    color: white;
+}
+
+/* レビューお願い */
+.status_sendback {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* 直してね */
+.status_finished {
+    background-color: #28a745;
+    color: white;
+}
+
+/* 完了 */
+.status_suspended {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* 中止 */

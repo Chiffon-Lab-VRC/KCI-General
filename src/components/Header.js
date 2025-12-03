@@ -19,7 +19,9 @@ const Header = ({ onRefresh, showRefresh = true }) => {
 
     const menuItems = [
         { name: 'ダッシュボード', path: '/' },
-        { name: 'ガントチャート', path: '/gantt' }
+        { name: 'ガントチャート', path: '/gantt' },
+        { name: 'チケット管理', path: '/tickets' },
+        { name: 'API Types', path: '/types' }
     ];
 
     return (
