@@ -242,6 +242,17 @@
     box-sizing: border-box;
 }
 
+.todayLine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #FF6B35;
+    box-shadow: 0 0 8px rgba(255, 107, 53, 0.6);
+    z-index: 5;
+    pointer-events: none;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 1024px) {
     .ticketTree {

@@ -189,7 +189,18 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
     };
 
     const renderGridBackground = () => {
+        // Get today's date for indicator
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         if (view === 'monthly') {
+            // Calculate today's position in the timeline
+            const todayIndex = days.findIndex(day => {
+                const dayDate = new Date(day);
+                dayDate.setHours(0, 0, 0, 0);
+                return dayDate.getTime() === today.getTime();
+            });
+
             return (
                 <div className={styles.gridBackground}>
                     {days.map((_, index) => (
@@ -199,9 +210,23 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
                             style={{ width: `${DAY_WIDTH}px`, minWidth: `${DAY_WIDTH}px` }}
                         />
                     ))}
+                    {todayIndex >= 0 && (
+                        <div
+                            className={styles.todayLine}
+                            style={{
+                                left: `${(todayIndex + 1) * DAY_WIDTH}px`
+                            }}
+                        />
+                    )}
                 </div>
             );
         } else {
+            // For master view, calculate month position
+            const todayMonthIndex = months.findIndex(month => {
+                return month.getFullYear() === today.getFullYear() &&
+                    month.getMonth() === today.getMonth();
+            });
+
             return (
                 <div className={styles.gridBackground}>
                     {months.map((_, index) => (
@@ -211,6 +236,14 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
                             style={{ flex: 1 }}
                         />
                     ))}
+                    {todayMonthIndex >= 0 && (
+                        <div
+                            className={styles.todayLine}
+                            style={{
+                                left: `${((todayMonthIndex + 1) / months.length) * 100}%`
+                            }}
+                        />
+                    )}
                 </div>
             );
         }
@@ -278,7 +311,25 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
                             textAlign: visibleColumns.doneRatio ? 'left' : 'center'
                         }}
                     >
-                        {visibleColumns.doneRatio ? (ticket.done_ratio !== undefined ? `${ticket.done_ratio}%` : '-') : '...'}
+                        {visibleColumns.doneRatio ? (
+                            ticket.done_ratio !== undefined ? (
+                                <span
+                                    className={styles.progressBadge}
+                                    style={{
+                                        backgroundColor: ticket.done_ratio === 100 ? '#22c55e' :
+                                            ticket.done_ratio === 0 ? '#6b7280' : '#FF6B35',
+                                        color: 'white',
+                                        padding: '2px 8px',
+                                        borderRadius: '4px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        display: 'inline-block'
+                                    }}
+                                >
+                                    {ticket.done_ratio}%
+                                </span>
+                            ) : '-'
+                        ) : '...'}
                     </div>
                 </div>
                 {hasChildren && isExpanded && ticket.children.map(child => renderTicketTree(child, level + 1))}
@@ -289,6 +340,10 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
     const renderTicketBars = (ticket) => {
         const hasChildren = ticket.children && ticket.children.length > 0;
         const isExpanded = expandedTickets[ticket.id] === true;
+
+        // Get today's date at midnight for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         return (
             <>
@@ -303,18 +358,45 @@ const GanttChart = ({ tickets, view, selectedMonth }) => {
                             <span className={styles.barLabel}>予定</span>
                         </div>
                     )}
-                    {ticket.start_date && ticket.done_ratio > 0 && (
-                        <div
-                            className={`${styles.bar} ${styles.actualBar}`}
-                            style={{
-                                ...calculateBarStyle(ticket.start_date, ticket.due_date || ticket.start_date),
-                                width: `calc(${calculateBarStyle(ticket.start_date, ticket.due_date || ticket.start_date)?.width} * ${ticket.done_ratio / 100})`
-                            }}
-                            title={`実績: ${ticket.done_ratio}%完了`}
-                        >
-                            <span className={styles.barLabel}>実績</span>
-                        </div>
-                    )}
+                    {ticket.start_date && ticket.done_ratio > 0 && (() => {
+                        // Parse dates
+                        const parseDate = (dateStr) => {
+                            const [year, month, day] = dateStr.split('-').map(Number);
+                            return new Date(year, month - 1, day);
+                        };
+
+                        const startDate = parseDate(ticket.start_date);
+                        const dueDate = ticket.due_date ? parseDate(ticket.due_date) : startDate;
+
+                        // Cap the actual progress end date at today
+                        const actualEndDate = dueDate > today ? today : dueDate;
+
+                        // Calculate the progress ratio based on the capped end date
+                        const totalDays = Math.max(1, (dueDate - startDate) / (1000 * 60 * 60 * 24));
+                        const actualDays = Math.max(0, (actualEndDate - startDate) / (1000 * 60 * 60 * 24));
+                        const maxProgressRatio = actualDays / totalDays;
+
+                        // Apply done_ratio but cap it at the maximum allowed by today's date
+                        const effectiveProgressRatio = Math.min(ticket.done_ratio / 100, maxProgressRatio);
+
+                        // Format date for display
+                        const formatDate = (date) => {
+                            const y = date.getFullYear();
+                            const m = String(date.getMonth() + 1).padStart(2, '0');
+                            const d = String(date.getDate()).padStart(2, '0');
+                            return `${y}-${m}-${d}`;
+                        };
+
+                        return (
+                            <div
+                                className={`${styles.bar} ${styles.actualBar}`}
+                                style={calculateBarStyle(ticket.start_date, formatDate(actualEndDate))}
+                                title={`実績: ${ticket.done_ratio}%完了 (${formatDate(startDate)} ～ ${formatDate(actualEndDate)})`}
+                            >
+                                <span className={styles.barLabel}>実績</span>
+                            </div>
+                        );
+                    })()}
                 </div>
                 {hasChildren && isExpanded && ticket.children.map(child => renderTicketBars(child))}
             </>
