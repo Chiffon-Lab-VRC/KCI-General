@@ -176,7 +176,56 @@ export default function TypeViewer() {
         // Sort alphabetically
         uniqueTypes.sort((a, b) => a.name.localeCompare(b.name));
 
+        // Build schema map for reference expansion
+        const schemaMap = {};
+        uniqueTypes.forEach(type => {
+            if (type.category === 'schema') {
+                // Extract content inside braces
+                const match = type.content.match(/\{[\s\S]*\}/);
+                if (match) {
+                    schemaMap[type.name] = match[0];
+                }
+            }
+        });
+
+        // Expand schema references in all types
+        uniqueTypes.forEach(type => {
+            type.content = expandSchemaReferences(type.content, schemaMap);
+        });
+
         return uniqueTypes;
+    };
+
+    // Function to expand schema references recursively
+    const expandSchemaReferences = (content, schemaMap, depth = 0, maxDepth = 3) => {
+        if (depth > maxDepth) return content; // Prevent infinite recursion
+
+        // Regex to match components["schemas"]["SchemaName"] or components['schemas']['SchemaName']
+        const schemaRefPattern = /components\[['"]schemas['"]\]\[['"](\w+)['"]\]/g;
+
+        let expandedContent = content;
+        const matches = [...content.matchAll(schemaRefPattern)];
+
+        for (const match of matches) {
+            const schemaName = match[1];
+            const fullMatch = match[0];
+
+            if (schemaMap[schemaName]) {
+                // Get the schema content and recursively expand its references
+                const schemaContent = expandSchemaReferences(
+                    schemaMap[schemaName],
+                    schemaMap,
+                    depth + 1,
+                    maxDepth
+                );
+
+                // Replace the reference with components { content }
+                const replacement = `components ${schemaContent}`;
+                expandedContent = expandedContent.replace(fullMatch, replacement);
+            }
+        }
+
+        return expandedContent;
     };
 
     const parseTypesFromBlock = (blockContent, categoryName, priority) => {
